@@ -10,32 +10,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 
-/**
- * 预算服务
- * 处理预算相关的业务逻辑
- */
 @Service
 @RequiredArgsConstructor
 public class BudgetService {
-    
+
     private final BudgetRepository budgetRepository;
     private final TransactionRepository transactionRepository;
-    
-    /**
-     * 创建预算
-     */
+
     @Transactional
     public Budget createBudget(Long userId, BudgetRequest request) {
-        // 检查是否已存在相同分类的预算
         if (request.getCategoryId() != null) {
             budgetRepository.findByUserIdAndCategoryId(userId, request.getCategoryId())
                     .ifPresent(b -> { throw new RuntimeException("该分类已存在预算"); });
         }
-        
+
         Budget budget = Budget.builder()
                 .userId(userId)
                 .categoryId(request.getCategoryId())
@@ -47,18 +38,15 @@ public class BudgetService {
                 .alertThreshold(request.getAlertThreshold() != null ? request.getAlertThreshold() : 80)
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                 .build();
-        
+
         return budgetRepository.save(budget);
     }
-    
-    /**
-     * 更新预算
-     */
+
     @Transactional
     public Budget updateBudget(Long userId, Long budgetId, BudgetRequest request) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, userId)
                 .orElseThrow(() -> new RuntimeException("预算不存在"));
-        
+
         budget.setCategoryId(request.getCategoryId());
         budget.setName(request.getName());
         budget.setPeriod(request.getPeriod());
@@ -67,114 +55,91 @@ public class BudgetService {
         budget.setEndDate(request.getEndDate());
         budget.setAlertThreshold(request.getAlertThreshold());
         budget.setIsActive(request.getIsActive());
-        
+
         return budgetRepository.save(budget);
     }
-    
-    /**
-     * 删除预算
-     */
+
     @Transactional
     public void deleteBudget(Long userId, Long budgetId) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, userId)
                 .orElseThrow(() -> new RuntimeException("预算不存在"));
-        
         budgetRepository.delete(budget);
     }
-    
-    /**
-     * 获取用户所有预算
-     */
+
     @Transactional(readOnly = true)
     public List<Budget> getUserBudgets(Long userId) {
         List<Budget> budgets = budgetRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        
-        // 更新每个预算的已花费金额
         for (Budget budget : budgets) {
             budget.setSpent(calculateSpent(userId, budget));
         }
-        
         return budgets;
     }
-    
-    /**
-     * 获取预算详情
-     */
+
     @Transactional(readOnly = true)
     public Budget getBudgetById(Long userId, Long budgetId) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, userId)
                 .orElseThrow(() -> new RuntimeException("预算不存在"));
-        
         budget.setSpent(calculateSpent(userId, budget));
-        
         return budget;
     }
-    
-    /**
-     * 计算预算已花费金额
-     */
+
     private BigDecimal calculateSpent(Long userId, Budget budget) {
+        // 修复核心：变量只赋值1次，变成有效final，解决Lambda报错
         LocalDate startDate;
         LocalDate endDate;
-        
-        // 根据预算周期计算日期范围
-        switch (budget.getPeriod()) {
-            case DAILY:
-                startDate = LocalDate.now();
-                endDate = LocalDate.now();
-                break;
-            case WEEKLY:
-                LocalDate today = LocalDate.now();
-                startDate = today.minusDays(today.getDayOfWeek().getValue() - 1);
-                endDate = startDate.plusDays(6);
-                break;
-            case MONTHLY:
-                YearMonth currentMonth = YearMonth.now();
-                startDate = currentMonth.atDay(1);
-                endDate = currentMonth.atEndOfMonth();
-                break;
-            case YEARLY:
-                int year = LocalDate.now().getYear();
-                startDate = LocalDate.of(year, 1, 1);
-                endDate = LocalDate.of(year, 12, 31);
-                break;
-            default:
-                startDate = LocalDate.now();
-                endDate = LocalDate.now();
-        }
-        
-        // 如果预算有自定义日期范围，使用自定义范围
+
+        // 优先使用自定义日期
         if (budget.getStartDate() != null && budget.getEndDate() != null) {
             startDate = budget.getStartDate().toLocalDate();
             endDate = budget.getEndDate().toLocalDate();
+        } else {
+            // 没有自定义日期，按周期计算
+            switch (budget.getPeriod()) {
+                case DAILY:
+                    startDate = LocalDate.now();
+                    endDate = LocalDate.now();
+                    break;
+                case WEEKLY:
+                    LocalDate today = LocalDate.now();
+                    startDate = today.minusDays(today.getDayOfWeek().getValue() - 1);
+                    endDate = startDate.plusDays(6);
+                    break;
+                case MONTHLY:
+                    YearMonth currentMonth = YearMonth.now();
+                    startDate = currentMonth.atDay(1);
+                    endDate = currentMonth.atEndOfMonth();
+                    break;
+                case YEARLY:
+                    int year = LocalDate.now().getYear();
+                    startDate = LocalDate.of(year, 1, 1);
+                    endDate = LocalDate.of(year, 12, 31);
+                    break;
+                default:
+                    startDate = LocalDate.now();
+                    endDate = LocalDate.now();
+            }
         }
-        
-        // 计算支出
+
         BigDecimal spent;
         if (budget.getCategoryId() != null) {
-            // 特定分类的支出
             spent = transactionRepository.findByUserIdAndCategoryIdOrderByTransactionDateDesc(
                             userId, budget.getCategoryId()).stream()
                     .filter(t -> t.getType().name().equals("EXPENSE"))
-                    .filter(t -> !t.getTransactionDate().isBefore(startDate) && 
+                    .filter(t -> !t.getTransactionDate().isBefore(startDate) &&
                                  !t.getTransactionDate().isAfter(endDate))
                     .map(t -> t.getAmount())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
         } else {
-            // 所有支出
             spent = transactionRepository.sumExpenseByUserIdAndDateRange(userId, startDate, endDate);
         }
-        
+
         return spent != null ? spent : BigDecimal.ZERO;
     }
-    
-    /**
-     * 检查预算预警
-     */
+
     @Transactional(readOnly = true)
     public List<Budget> checkBudgetAlerts(Long userId) {
         List<Budget> activeBudgets = budgetRepository.findByUserIdAndIsActiveTrue(userId);
-        
+
         return activeBudgets.stream()
                 .filter(budget -> {
                     BigDecimal spent = calculateSpent(userId, budget);
