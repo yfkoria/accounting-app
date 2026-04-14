@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能记账 - 个人财务管理助手</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --warning-gradient: linear-gradient(135deg, #F2994A 0%, #F2C94C 100%);
+            --danger-gradient: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --dark-bg: #1a1a2e;
+            --card-bg: #ffffff;
+            --sidebar-bg: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        /* 登录页面样式 */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-gradient);
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(10px);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-logo i {
+            font-size: 60px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        .form-floating {
+            margin-bottom: 20px;
+        }
+
+        .form-floating input {
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .form-floating input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .btn-primary-gradient {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* 主应用样式 */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: var(--sidebar-bg);
+            padding: 20px 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h3 {
+            color: #fff;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .sidebar-header p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0 15px;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 5px;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        .sidebar-menu i {
+            font-size: 20px;
+            margin-right: 12px;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        /* 顶部导航 */
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        /* 统计卡片 */
+        .stat-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card .icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .stat-card .icon.income {
+            background: var(--success-gradient);
+        }
+
+        .stat-card .icon.expense {
+            background: var(--danger-gradient);
+        }
+
+        .stat-card .icon.balance {
+            background: var(--info-gradient);
+        }
+
+        .stat-card .icon.assets {
+            background: var(--warning-gradient);
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .stat-card .trend {
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .stat-card .trend.up {
+            color: #38ef7d;
+        }
+
+        .stat-card .trend.down {
+            color: #f45c43;
+        }
+
+        /* 快捷操作 */
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .quick-btn {
+            flex: 1;
+            padding: 20px;
+            border-radius: 16px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quick-btn.income {
+            background: var(--success-gradient);
+            color: #fff;
+        }
+
+        .quick-btn.expense {
+            background: var(--danger-gradient);
+            color: #fff;
+        }
+
+        .quick-btn.transfer {
+            background: var(--info-gradient);
+            color: #fff;
+        }
+
+        .quick-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 卡片容器 */
+        .card-container {
+            background: #fff;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .card-header h4 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        /* 交易列表 */
+        .transaction-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f5f5f5;
+            transition: all 0.3s ease;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-item:hover {
+            background: #f9f9f9;
+            margin: 0 -15px;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .transaction-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 15px;
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-info h5 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .transaction-info p {
+            font-size: 13px;
+            color: #888;
+            margin: 0;
+        }
+
+        .transaction-amount {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .transaction-amount.income {
+            color: #38ef7d;
+        }
+
+        .transaction-amount.expense {
+            color: #f45c43;
+        }
+
+        /* 分类标签 */
+        .category-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            margin: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-tag:hover {
+            transform: scale(1.05);
+        }
+
+        /* 模态框样式 */
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+        }
+
+        .modal-header {
+            background: var(--primary-gradient);
+            color: #fff;
+            border-radius: 20px 20px 0 0;
+            padding: 20px 25px;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            padding: 15px 25px;
+            border-top: 1px solid #eee;
+        }
+
+        /* 表单样式 */
+        .form-label {
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        }
+
+        /* 账户卡片 */
+        .account-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 25px;
+            color: #fff;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .account-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        .account-card .bank-name {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .account-card .account-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .account-card .balance {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .account-card .account-type {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+
+        /* 预算进度条 */
+        .budget-item {
+            margin-bottom: 20px;
+        }
+
+        .budget-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .budget-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .budget-amount {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+            background: #eee;
+        }
+
+        .progress-bar {
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 50px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Toast 提示 */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .custom-toast {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .custom-toast.success {
+            border-left: 4px solid #38ef7d;
+        }
+
+        .custom-toast.error {
+            border-left: 4px solid #f45c43;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #888;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h5 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        /* 标签页 */
+        .nav-tabs {
+            border-bottom: 2px solid #eee;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #888;
+            font-weight: 500;
+            padding: 12px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            margin-bottom: -2px;
+        }
+
+        /* 隐藏页面 */
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div class="login-container" id="loginPage">
+        <div class="login-card">
+            <div class="login-logo">
+                <i class="bi bi-wallet2"></i>
+                <h1>智能记账</h1>
+                <p class="text-muted">个人财务管理助手</p>
+            </div>
+            
+            <div id="loginForm">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="loginUsername" placeholder="用户名">
+                    <label for="loginUsername">用户名</label>
+                </div>
+                <div class="form-floating mb-4">
+                    <input type="password" class="form-control" id="loginPassword" placeholder="密码">
+                    <label for="loginPassword">密码</label>
+                </div>
+                <button class="btn btn-primary-gradient w-100 mb-3" onclick="handleLogin()">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>登录
+                </button>
+                <p class="text-center text-muted mb-0">
+                    还没有账号？<a href="#" onclick="showRegisterForm()">立即注册</a>
+                </p>
+            </div>
+            
+            <div id="registerForm" style="display: none;">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="regUsername" placeholder="用户名">
+                    <label for="regUsername">用户名</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" id="regEmail" placeholder="邮箱">
+                    <label for="regEmail">邮箱</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" id="regPassword" placeholder="密码">
+                    <label for="regPassword">密码</label>
+                </div>
+                <div class="form-floating mb-4">
+                    <input type="password" class="form-control" id="regConfirmPassword" placeholder="确认密码">
+                    <label for="regConfirmPassword">确认密码</label>
+                </div>
+                <button class="btn btn-primary-gradient w-100 mb-3" onclick="handleRegister()">
+                    <i class="bi bi-person-plus me-2"></i>注册
+                </button>
+                <p class="text-center text-muted mb-0">
+                    已有账号？<a href="#" onclick="showLoginForm()">立即登录</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主应用 -->
+    <div class="app-container" id="appContainer">
+        <!-- 侧边栏 -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="bi bi-wallet2 me-2"></i>智能记账</h3>
+                <p>个人财务管理助手</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active" data-page="dashboard"><i class="bi bi-grid-1x2"></i>仪表盘</a></li>
+                <li><a href="#" data-page="transactions"><i class="bi bi-list-ul"></i>交易记录</a></li>
+                <li><a href="#" data-page="accounts"><i class="bi bi-credit-card"></i>账户管理</a></li>
+                <li><a href="#" data-page="categories"><i class="bi bi-tags"></i>分类管理</a></li>
+                <li><a href="#" data-page="budgets"><i class="bi bi-piggy-bank"></i>预算管理</a></li>
+                <li><a href="#" data-page="statistics"><i class="bi bi-bar-chart"></i>统计分析</a></li>
+            </ul>
+            <div class="position-absolute bottom-0 w-100 p-3">
+                <button class="btn btn-outline-light w-100" onclick="handleLogout()">
+                    <i class="bi bi-box-arrow-left me-2"></i>退出登录
+                </button>
+            </div>
+        </nav>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 仪表盘页面 -->
+            <section class="page-section active" id="dashboardPage">
+                <div class="top-nav">
+                    <h2 class="page-title">仪表盘</h2>
+                    <div class="user-info">
+                        <span id="welcomeUser">欢迎回来</span>
+                        <div class="user-avatar" id="userAvatar">U</div>
+                    </div>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="icon income"><i class="bi bi-graph-up-arrow"></i></div>
+                            <h3>本月收入</h3>
+                            <div class="amount" id="monthlyIncome">¥0.00</div>
+                            <div class="trend up"><i class="bi bi-arrow-up"></i> 较上月</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="icon expense"><i class="bi bi-graph-down-arrow"></i></div>
+                            <h3>本月支出</h3>
+                            <div class="amount" id="monthlyExpense">¥0.00</div>
+                            <div class="trend down"><i class="bi bi-arrow-down"></i> 较上月</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="icon balance"><i class="bi bi-wallet"></i></div>
+                            <h3>本月结余</h3>
+                            <div class="amount" id="monthlyBalance">¥0.00</div>
+                            <div class="trend up"><i class="bi bi-arrow-up"></i> 储蓄率</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="icon assets"><i class="bi bi-bank"></i></div>
+                            <h3>总资产</h3>
+                            <div class="amount" id="totalAssets">¥0.00</div>
+                            <div class="trend">净资产</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快捷操作 -->
+                <div class="quick-actions">
+                    <button class="quick-btn income" onclick="openTransactionModal('INCOME')">
+                        <i class="bi bi-plus-circle"></i>记一笔收入
+                    </button>
+                    <button class="quick-btn expense" onclick="openTransactionModal('EXPENSE')">
+                        <i class="bi bi-dash-circle"></i>记一笔支出
+                    </button>
+                    <button class="quick-btn transfer" onclick="openTransactionModal('TRANSFER')">
+                        <i class="bi bi-arrow-left-right"></i>账户转账
+                    </button>
+                </div>
+
+                <div class="row">
+                    <!-- 最近交易 -->
+                    <div class="col-lg-8">
+                        <div class="card-container">
+                            <div class="card-header">
+                                <h4><i class="bi bi-clock-history me-2"></i>最近交易</h4>
+                                <a href="#" class="text-decoration-none" onclick="navigateTo('transactions')">查看全部</a>
+                            </div>
+                            <div id="recentTransactions">
+                                <div class="loading"><div class="spinner"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 预算概览 -->
+                    <div class="col-lg-4">
+                        <div class="card-container">
+                            <div class="card-header">
+                                <h4><i class="bi bi-piggy-bank me-2"></i>预算概览</h4>
+                            </div>
+                            <div id="budgetOverview">
+                                <div class="loading"><div class="spinner"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 交易记录页面 -->
+            <section class="page-section" id="transactionsPage">
+                <div class="top-nav">
+                    <h2 class="page-title">交易记录</h2>
+                    <button class="btn btn-primary-gradient" onclick="openTransactionModal()">
+                        <i class="bi bi-plus-lg me-2"></i>新增交易
+                    </button>
+                </div>
+
+                <div class="card-container">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <input type="date" class="form-control" id="filterStartDate">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="date" class="form-control" id="filterEndDate">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-primary w-100" onclick="filterTransactions()">
+                                <i class="bi bi-search me-2"></i>筛选
+                            </button>
+                        </div>
+                    </div>
+                    <div id="transactionsList">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 账户管理页面 -->
+            <section class="page-section" id="accountsPage">
+                <div class="top-nav">
+                    <h2 class="page-title">账户管理</h2>
+                    <button class="btn btn-primary-gradient" onclick="openAccountModal()">
+                        <i class="bi bi-plus-lg me-2"></i>新增账户
+                    </button>
+                </div>
+
+                <div class="row" id="accountsList">
+                    <div class="loading"><div class="spinner"></div></div>
+                </div>
+            </section>
+
+            <!-- 分类管理页面 -->
+            <section class="page-section" id="categoriesPage">
+                <div class="top-nav">
+                    <h2 class="page-title">分类管理</h2>
+                    <button class="btn btn-primary-gradient" onclick="openCategoryModal()">
+                        <i class="bi bi-plus-lg me-2"></i>新增分类
+                    </button>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card-container">
+                            <div class="card-header">
+                                <h4><i class="bi bi-graph-up text-success me-2"></i>收入分类</h4>
+                            </div>
+                            <div id="incomeCategories"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card-container">
+                            <div class="card-header">
+                                <h4><i class="bi bi-graph-down text-danger me-2"></i>支出分类</h4>
+                            </div>
+                            <div id="expenseCategories"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 预算管理页面 -->
+            <section class="page-section" id="budgetsPage">
+                <div class="top-nav">
+                    <h2 class="page-title">预算管理</h2>
+                    <button class="btn btn-primary-gradient" onclick="openBudgetModal()">
+                        <i class="bi bi-plus-lg me-2"></i>新增预算
+                    </button>
+                </div>
+
+                <div class="row" id="budgetsList">
+                    <div class="loading"><div class="spinner"></div></div>
+                </div>
+            </section>
+
+            <!-- 统计分析页面 -->
+            <section class="page-section" id="statisticsPage">
+                <div class="top-nav">
+                    <h2 class="page-title">统计分析</h2>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <input type="date" class="form-control" id="statsStartDate">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" class="form-control" id="statsEndDate">
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary-gradient w-100" onclick="loadStatistics()">
+                            <i class="bi bi-bar-chart me-2"></i>生成报表
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card-container">
+                            <div class="card-header">
+                                <h4><i class="bi bi-pie-chart me-2"></i>支出分布</h4>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="expenseChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card-container">
+                            <div class="card-header">
+                                <h4><i class="bi bi-graph-up me-2"></i>收支趋势</h4>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 交易模态框 -->
+    <div class="modal fade" id="transactionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="transactionModalTitle">新增交易</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="transactionForm">
+                        <input type="hidden" id="transactionId">
+                        <div class="mb-3">
+                            <label class="form-label">交易类型</label>
+                            <select class="form-select" id="transactionType" required>
+                                <option value="INCOME">收入</option>
+                                <option value="EXPENSE">支出</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">金额</label>
+                            <input type="number" class="form-control" id="transactionAmount" step="0.01" min="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">账户</label>
+                            <select class="form-select" id="transactionAccount" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">分类</label>
+                            <select class="form-select" id="transactionCategory" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">日期</label>
+                            <input type="date" class="form-control" id="transactionDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">备注</label>
+                            <input type="text" class="form-control" id="transactionRemark">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary-gradient" onclick="saveTransaction()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 账户模态框 -->
+    <div class="modal fade" id="accountModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="accountModalTitle">新增账户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="accountForm">
+                        <input type="hidden" id="accountId">
+                        <div class="mb-3">
+                            <label class="form-label">账户名称</label>
+                            <input type="text" class="form-control" id="accountName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">账户类型</label>
+                            <select class="form-select" id="accountType" required>
+                                <option value="CASH">现金</option>
+                                <option value="BANK_CARD">银行卡</option>
+                                <option value="CREDIT_CARD">信用卡</option>
+                                <option value="ALIPAY">支付宝</option>
+                                <option value="WECHAT">微信</option>
+                                <option value="INVESTMENT">投资账户</option>
+                                <option value="OTHER">其他</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">初始余额</label>
+                            <input type="number" class="form-control" id="accountBalance" step="0.01" value="0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">备注</label>
+                            <input type="text" class="form-control" id="accountDescription">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary-gradient" onclick="saveAccount()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分类模态框 -->
+    <div class="modal fade" id="categoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="categoryModalTitle">新增分类</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="categoryForm">
+                        <input type="hidden" id="categoryId">
+                        <div class="mb-3">
+                            <label class="form-label">分类名称</label>
+                            <input type="text" class="form-control" id="categoryName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">分类类型</label>
+                            <select class="form-select" id="categoryType" required>
+                                <option value="INCOME">收入</option>
+                                <option value="EXPENSE">支出</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">图标</label>
+                            <input type="text" class="form-control" id="categoryIcon" placeholder="例如：🍽️">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">颜色</label>
+                            <input type="color" class="form-control form-control-color" id="categoryColor" value="#667eea">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary-gradient" onclick="saveCategory()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 预算模态框 -->
+    <div class="modal fade" id="budgetModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="budgetModalTitle">新增预算</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="budgetForm">
+                        <input type="hidden" id="budgetId">
+                        <div class="mb-3">
+                            <label class="form-label">预算名称</label>
+                            <input type="text" class="form-control" id="budgetName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">预算金额</label>
+                            <input type="number" class="form-control" id="budgetAmount" step="0.01" min="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">预算周期</label>
+                            <select class="form-select" id="budgetPeriod" required>
+                                <option value="DAILY">每日</option>
+                                <option value="WEEKLY">每周</option>
+                                <option value="MONTHLY" selected>每月</option>
+                                <option value="YEARLY">每年</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">关联分类（可选）</label>
+                            <select class="form-select" id="budgetCategory">
+                                <option value="">全部支出</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">预警阈值 (%)</label>
+                            <input type="number" class="form-control" id="budgetThreshold" min="1" max="100" value="80">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary-gradient" onclick="saveBudget()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
